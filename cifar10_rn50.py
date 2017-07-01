@@ -27,12 +27,13 @@ numClasses = 1000
 # y_test = np_utils.to_categorical(y_test, numClasses)
 
 # img_input = Input(shape=(depth, height, width)) # i'm using theano stuff
-img_input = Input(shape=(3, 224, 224))
+img_input = Input(shape=(3, 32, 32))
 
 if (K.image_data_format() == 'channels_first'):
     bn_axis = 1
 else:
     bn_axis = 3
+
 
 class BasicBlock():
     expansion = 1
@@ -57,8 +58,10 @@ class BasicBlock():
     def forward(self):
         return self.out
 
+
 class PreActBlock():
     expansion = 1
+ 
     def __init__(self, input, numFilters, stride, isConvBlock):
         x = BatchNormalization(axis=bn_axis)(input)
         x = Activation('relu')(x)
@@ -69,6 +72,7 @@ class PreActBlock():
             shortcut = x
         
         x = Convolution2D(numFilters, (3, 3), strides=stride, padding='same')(x)
+ 
         x = BatchNormalization(axis=bn_axis)(x)
         x = Activation('relu')(x)
         x = Convolution2D(numFilters, (3, 3), padding = 'same')(x)
@@ -105,7 +109,29 @@ class Bottleneck():
     def forward(self):
         return self.out
 
+class PreActBottleneck():
+    expansion = 4
 
+    def __init__(self, input, numFilters, stride, isConvBlock):
+        x = BatchNormalization(axis=bn_axis)(input)
+        x = Activation('relu')(x)
+
+        if isConvBlock:
+            shortcut = Convolution2D(self.expansion * numFilters, (1, 1), strides = stride)(x)
+        else:
+            shortcut = x
+
+        x = Convolution2D(numFilters, (1, 1))(x)
+ 
+        x = BatchNormalization(axis=bn_axis)(x)
+        x = Activation('relu')(x)
+        x = Convolution2D(numFilters, (3, 3), padding='same')(x) 
+
+        x = BatchNormalization(axis=bn_axis)(x)
+        x = Activation('relu')(x)
+        x = Convolution2D(4 * numFilters, (1, 1))(x)
+
+        # did not finish....
 
 class ResNet():
     def __init__(self, block, num_blocks):
@@ -134,25 +160,25 @@ class ResNet():
     def forward(self):
         return self.out
 
-# model = Model(inputs=img_input, outputs=out)
-
-# model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-# model.fit(x_train, y_train, batch_size=batch_size, epochs=num_epochs, verbose=1)
-# model.evaluate(x_test, y_test)
-
 def ResNet18():
     resnet = ResNet(PreActBlock, [2, 2, 2, 2])
     return resnet.forward()
 
 def ResNet34():
-    resnet = ResNet(PreActBlock, [3, 4, 6 ,3])
+    resnet = ResNet(BasicBlock, [3, 4, 6 ,3])
     return resnet.forward()
 
 def ResNet50():
     resnet = ResNet(Bottleneck, [3, 4, 6, 3])
     return resnet.forward()
 
-model = Model(inputs=img_input, outputs = ResNet34());
+model = Model(inputs=img_input, outputs = ResNet50());
 print(model.summary())
+
+# model = Model(inputs=img_input, outputs=out)
+
+# model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+# model.fit(x_train, y_train, batch_size=batch_size, epochs=num_epochs, verbose=1)
+# model.evaluate(x_test, y_test)
         
         
