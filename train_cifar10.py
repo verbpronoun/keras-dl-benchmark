@@ -35,7 +35,7 @@ if not data_augmentation:
               batch_size=batch_size, 
               epochs=num_epochs, 
               verbose=1,
-              validation_data=(x_text, y_test))
+              validation_data=(x_test, y_test))
 else:
     datagen = ImageDataGenerator(
         featurewise_center=False,
@@ -53,10 +53,10 @@ else:
                                                batch_size=batch_size),
                                   steps_per_epoch=x_train.shape[0] // batch_size,
                                   epochs=num_epochs,
-                                  validation_data=(x_text, y_test))
+                                  validation_data=(x_test, y_test))
 
 # summarize history for accuracy
-plt.plot(history.history['acc'])
+plt.plot(history.history['acc'])    
 plt.plot(history.history['val_acc'])
 plt.title('model accuracy')
 plt.ylabel('accuracy')
