@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from keras.layers import Input
 from keras.models import Model
@@ -32,7 +34,8 @@ if not data_augmentation:
     history = model.fit(x_train, y_train, 
               batch_size=batch_size, 
               epochs=num_epochs, 
-              verbose=1)
+              verbose=1,
+              validation_data=(x_text, y_test))
 else:
     datagen = ImageDataGenerator(
         featurewise_center=False,
@@ -48,8 +51,9 @@ else:
     datagen.fit(x_train)
     history = model.fit_generator(datagen.flow(x_train, y_train, 
                                                batch_size=batch_size),
-                        steps_per_epoch=x_train.shape[0] // batch_size,
-                        epochs=num_epochs)
+                                  steps_per_epoch=x_train.shape[0] // batch_size,
+                                  epochs=num_epochs,
+                                  validation_data=(x_text, y_test))
 
 # summarize history for accuracy
 plt.plot(history.history['acc'])
@@ -58,7 +62,15 @@ plt.title('model accuracy')
 plt.ylabel('accuracy')
 plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='upper left')
-plt.show()
+plt.savefig('cifar10-resnet-acc.png')
+# summarize history for loss
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.savefig('cifar10-resnet-loss.png')
 
 scores = model.evaluate(x_test, y_test)
 print("\n%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
