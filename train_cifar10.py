@@ -4,17 +4,30 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import math
+
 from keras.layers import Input
 from keras.models import Model
+from keras.optimizers import SGD
 from keras.utils import np_utils
 from keras.preprocessing.image import ImageDataGenerator
+from keras.callbacks import LearningRateScheduler
 from keras.datasets import cifar10
 import resnet_builder
 
-batch_size = 32
-num_epochs = 10
+batch_size = 128
+num_epochs = 350
 num_classes = 10
 data_augmentation = True
+
+def step_decay(epoch):
+    initial_lrate = 0.1
+    drop = 0.1
+    epoch_drop = 100
+    if epoch < 51:
+        return initial_lrate
+    lrate = initial_lrate * math.pow(drop, math.floor((epoch - 51)/epoch_drop))
+    return lrate
 
 # Preprocess train and test set data
 (x_train, y_train), (x_test, y_test) = cifar10.load_data()
@@ -30,12 +43,17 @@ img_input = Input(shape=x_train.shape[1:])
 
 model = resnet_builder.ResNet50(x_train.shape[1:], num_classes=num_classes)
 
-model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+sgd = SGD(lr=0.1, momentum=0.9, decay=0.0, nesterov=False)
+model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
+
+lrate = LearningRateScheduler(step_decay)
+callbacks_list = [lrate]
 
 if not data_augmentation:
     history = model.fit(x_train, y_train, 
               batch_size=batch_size, 
               epochs=num_epochs, 
+              callbacks=callbacks_list,
               verbose=1,
               validation_data=(x_test, y_test))
 else:
@@ -55,6 +73,8 @@ else:
                                                batch_size=batch_size),
                                   steps_per_epoch=x_train.shape[0] // batch_size,
                                   epochs=num_epochs,
+                                  callbacks=callbacks_list,
+                                  verbose=1,
                                   validation_data=(x_test, y_test))
 
 # summarize history for accuracy
