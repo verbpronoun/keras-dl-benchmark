@@ -11,6 +11,7 @@ import time
 import csv
 
 from collections import OrderedDict
+from collections import Iterable
 
 from keras.layers import Input
 from keras.models import Model
@@ -75,16 +76,16 @@ class CSV_Logger(Callback):
         if not self.writer:
             self.keys = sorted(logs.keys())
 
-            class CustomDialect(csv.excel):
-                delimiter = self.sep
+            # class CustomDialect(csv.excel):
+            #     delimiter = self.sep
 
             self.writer = csv.DictWriter(self.csv_file,
-                                         fieldnames=['epoch'] + self.keys, dialect=CustomDialect)
+                                         fieldnames=['epoch', 'epoch time'] + self.keys, dialect='excel-tab')
             if self.append_header:
                 self.writer.writeheader()
 
-        row_dict = OrderedDict({'epoch': epoch})
-        row_dict.update(('epoch time', time.time() - self.epoch_time_start))
+        end_time = time.time() - self.epoch_time_start
+        row_dict = OrderedDict({'epoch': epoch, 'epoch time': end_time})
         row_dict.update((key, handle_value(logs[key])) for key in self.keys)
         self.writer.writerow(row_dict)
         self.csv_file.flush()
