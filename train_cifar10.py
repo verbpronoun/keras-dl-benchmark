@@ -57,7 +57,7 @@ class CSV_Logger(Callback):
         else:
             self.csv_file = open(self.filename, 'w' + self.file_flags)
 
-    def on_epoch_begin(self, logs=None):
+    def on_epoch_begin(self, epoch, logs=None):
         self.epoch_time_start = time.time()
 
     def on_epoch_end(self, epoch, logs=None):
