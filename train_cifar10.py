@@ -104,6 +104,11 @@ for i in range(x_train.shape[3]):
     std_dev = np.std(x_train[:,:,:,i])
     x_train[:,:,:,i] -= mean
     x_train[:,:,:,i] /= std_dev
+for i in range(x_test.shape[3]):
+    mean = np.mean(x_test[:,:,:,i])
+    std_dev = np.std(x_test[:,:,:,i])
+    x_test[:,:,:,i] -= mean
+    x_test[:,:,:,i] /= std_dev
 
 y_train = np_utils.to_categorical(y_train, num_classes)
 y_test = np_utils.to_categorical(y_test, num_classes)
