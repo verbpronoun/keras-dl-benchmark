@@ -13,139 +13,125 @@ else:
     bn_axis = 3
 
 
-class BasicBlock():
+def BasicBlock(input, numFilters, stride, isConvBlock):
     expansion = 1
+    x = Convolution2D(numFilters, (3, 3), strides=stride, padding='same')(input)
+    x = BatchNormalization(axis=bn_axis)(x)
+    x = Activation('relu')(x)
 
-    def __init__(self, input, numFilters, stride, isConvBlock):
-        x = Convolution2D(numFilters, (3, 3), strides=stride, padding='same')(input)
-        x = BatchNormalization(axis=bn_axis)(x)
-        x = Activation('relu')(x)
+    x = Convolution2D(numFilters, (3, 3), padding='same')(x)
+    x = BatchNormalization(axis=bn_axis)(x)
 
-        x = Convolution2D(numFilters, (3, 3), padding='same')(x)
-        x = BatchNormalization(axis=bn_axis)(x)
+    if isConvBlock:
+        shortcut = Convolution2D(expansion * numFilters, (1, 1), strides = stride)(input)
+        shortcut = BatchNormalization(axis=bn_axis)(x)
+    else:
+        shortcut = input
 
-        if isConvBlock:
-            shortcut = Convolution2D(self.expansion * numFilters, (1, 1), strides = stride)(input)
-            shortcut = BatchNormalization(axis=bn_axis)(x)
-        else:
-            shortcut = input
+    x = layers.add([x, shortcut])
+    x = Activation('relu')(x)
 
-        x = layers.add([x, shortcut])
-        self.out = Activation('relu')(x)
-
-    def forward(self):
-        return self.out
+    return x
 
 
-class PreActBlock():
+def PreActBlock(input, numFilters, stride, isConvBlock):
     expansion = 1
- 
-    def __init__(self, input, numFilters, stride, isConvBlock):
-        x = BatchNormalization(axis=bn_axis)(input)
-        x = Activation('relu')(x)
+    x = BatchNormalization(axis=bn_axis)(input)
+    x = Activation('relu')(x)
 
-        if isConvBlock:
-            shortcut = Convolution2D(self.expansion * numFilters, (1, 1), strides = stride)(x)
-        else:
-            shortcut = x
-        
-        x = Convolution2D(numFilters, (3, 3), strides=stride, padding='same')(x)
- 
-        x = BatchNormalization(axis=bn_axis)(x)
-        x = Activation('relu')(x)
-        x = Convolution2D(numFilters, (3, 3), padding = 'same')(x)
-
-        self.out = layers.add([x, shortcut])
-
-    def forward(self):
-        return self.out
-
-
-class Bottleneck():
-    expansion = 4
-    def __init__(self, input, numFilters, stride, isConvBlock):
-        x = Convolution2D(numFilters, (1, 1), strides=stride)(input)
-        x = BatchNormalization(axis=bn_axis)(x)
-        x = Activation('relu')(x)
-
-        x = Convolution2D(numFilters, (3, 3), padding='same')(x) 
-        x = BatchNormalization(axis=bn_axis)(x)
-        x = Activation('relu')(x)
-
-        x = Convolution2D(4 * numFilters, (1, 1))(x)
-        x = BatchNormalization(axis=bn_axis)(x)
-
-        if isConvBlock:
-            shortcut = Convolution2D(self.expansion * numFilters, (1, 1), strides=stride)(input)
-            shortcut = BatchNormalization(axis=bn_axis)(shortcut)
-        else:
-            shortcut = input
-
-        x = layers.add([x, shortcut])
-        self.out = Activation('relu')(x)
+    if isConvBlock:
+        shortcut = Convolution2D(expansion * numFilters, (1, 1), strides = stride)(x)
+    else:
+        shortcut = x
     
-    def forward(self):
-        return self.out
+    x = Convolution2D(numFilters, (3, 3), strides=stride, padding='same')(x)
 
-class PreActBottleneck():
+    x = BatchNormalization(axis=bn_axis)(x)
+    x = Activation('relu')(x)
+    x = Convolution2D(numFilters, (3, 3), padding = 'same')(x)
+
+    x = layers.add([x, shortcut])
+
+    return x
+
+def BottleneckBlock(input, numFilters, stride, isConvBlock):
     expansion = 4
+    x = Convolution2D(numFilters, (1, 1), strides=stride)(input)
+    x = BatchNormalization(axis=bn_axis)(x)
+    x = Activation('relu')(x)
 
-    def __init__(self, input, numFilters, stride, isConvBlock):
-        x = BatchNormalization(axis=bn_axis)(input)
-        x = Activation('relu')(x)
+    x = Convolution2D(numFilters, (3, 3), padding='same')(x) 
+    x = BatchNormalization(axis=bn_axis)(x)
+    x = Activation('relu')(x)
 
-        if isConvBlock:
-            shortcut = Convolution2D(self.expansion * numFilters, (1, 1), strides = stride)(x)
-        else:
-            shortcut = x
+    x = Convolution2D(4 * numFilters, (1, 1))(x)
+    x = BatchNormalization(axis=bn_axis)(x)
 
-        x = Convolution2D(numFilters, (1, 1))(x)
- 
-        x = BatchNormalization(axis=bn_axis)(x)
-        x = Activation('relu')(x)
-        x = Convolution2D(numFilters, (3, 3), padding='same')(x) 
+    if isConvBlock:
+        shortcut = Convolution2D(expansion * numFilters, (1, 1), strides=stride)(input)
+        shortcut = BatchNormalization(axis=bn_axis)(shortcut)
+    else:
+        shortcut = input
 
-        x = BatchNormalization(axis=bn_axis)(x)
-        x = Activation('relu')(x)
-        x = Convolution2D(4 * numFilters, (1, 1))(x)
+    x = layers.add([x, shortcut])
+    x = Activation('relu')(x)
+
+    return x
+    
+
+def PreActBottleneck(input, numFilters, stride, isConvBlock):
+    expansion = 4
+    x = BatchNormalization(axis=bn_axis)(input)
+    x = Activation('relu')(x)
+
+    if isConvBlock:
+        shortcut = Convolution2D(expansion * numFilters, (1, 1), strides = stride)(x)
+    else:
+        shortcut = x
+
+    x = Convolution2D(numFilters, (1, 1))(x)
+
+    x = BatchNormalization(axis=bn_axis)(x)
+    x = Activation('relu')(x)
+    x = Convolution2D(numFilters, (3, 3), padding='same')(x) 
+
+    x = BatchNormalization(axis=bn_axis)(x)
+    x = Activation('relu')(x)
+    x = Convolution2D(4 * numFilters, (1, 1))(x)
 
     # did not finish...
 
-class ResNet():
-    def __init__(self, block, num_blocks, input_shape, num_classes):
-        self.img_input = Input(shape=input_shape)
-        x = Convolution2D(64, (3, 3), padding='same')(self.img_input)
-        x = BatchNormalization(axis = bn_axis)(x)
-        x = Activation('relu')(x)
-        
-        x = self.make_layer(block, x, 64, num_blocks[0], 1)
-        x = self.make_layer(block, x, 128, num_blocks[1], 2)
-        x = self.make_layer(block, x, 256, num_blocks[2], 2)
-        x = self.make_layer(block, x, 512, num_blocks[3], 2)
-        
-        x = AveragePooling2D((4, 4), strides=2)(x)
-        x = Flatten()(x)
-        self.out = Dense(num_classes, activation='softmax')(x)
+
+def make_layer(block, input, numFilters, numBlocks, stride):
+    x = block(input, numFilters, stride, True)
+    for i in range(numBlocks - 1):
+        x = block(x, numFilters, 1, False)
+    return x
+
+def ResNet_builder(block, num_blocks, input_shape, num_classes):
+    img_input = Input(shape=input_shape)
+    x = Convolution2D(64, (3, 3), padding='same')(img_input)
+    x = BatchNormalization(axis = bn_axis)(x)
+    x = Activation('relu')(x)
     
-    def make_layer(self, block, input, numFilters, numBlocks, stride):
-        x = block(input, numFilters, stride, True)
-        for i in range(numBlocks - 1):
-            x = block(x.forward(), numFilters, 1, False)
-        return x.forward()
+    x = make_layer(block, x, 64, num_blocks[0], 1)
+    x = make_layer(block, x, 128, num_blocks[1], 2)
+    x = make_layer(block, x, 256, num_blocks[2], 2)
+    x = make_layer(block, x, 512, num_blocks[3], 2)
     
-    def forward(self):
-        return Model(inputs=self.img_input, outputs=self.out)
+    x = AveragePooling2D((4, 4), strides=2)(x)
+    x = Flatten()(x)
+    out = Dense(num_classes, activation='softmax')(x)
+    
+    return Model(inputs=img_input, outputs=out)
     
 def ResNet18(input_shape, num_classes):
-    resnet = ResNet(PreActBlock, [2, 2, 2, 2],input_shape, num_classes)
-    return resnet.forward()
+    return ResNet_builder(PreActBlock, [2, 2, 2, 2],input_shape, num_classes)
 
 def ResNet34(input_shape, num_classes):
-    resnet = ResNet(BasicBlock, [3, 4, 6 ,3],input_shape, num_classes)
-    return resnet.forward()
+    return ResNet_builder(BasicBlock, [3, 4, 6 ,3],input_shape, num_classes)
 
 def ResNet50(input_shape, num_classes):
-    resnet = ResNet(Bottleneck, [3, 4, 6, 3], input_shape, num_classes)
-    return resnet.forward()
+    return ResNet_builder(BottleneckBlock, [3, 4, 6, 3], input_shape, num_classes)
         
         

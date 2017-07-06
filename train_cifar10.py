@@ -5,6 +5,12 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import math
+import six
+import os
+import time
+import csv
+
+from collections import OrderedDict
 
 from keras.layers import Input
 from keras.models import Model
@@ -12,6 +18,7 @@ from keras.optimizers import SGD
 from keras.utils import np_utils
 from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import LearningRateScheduler
+from keras.callbacks import Callback
 from keras.datasets import cifar10
 import resnet_builder
 
@@ -21,20 +28,81 @@ num_classes = 10
 data_augmentation = True
 
 def step_decay(epoch):
+    epoch = epoch - 1 # arg is 1-based
     initial_lrate = 0.1
     drop = 0.1
     epoch_drop = 100
-    if epoch < 51:
+    if epoch < 50:
         return initial_lrate
-    lrate = initial_lrate * math.pow(drop, math.floor((epoch - 51)/epoch_drop))
+    lrate = initial_lrate * math.pow(drop, math.floor((epoch - 50)/epoch_drop))
     return lrate
+
+class CSV_Logger(Callback):
+    def __init__(self, filename, separator=',', append=False):
+        self.sep = separator
+        self.filename = filename
+        self.append = append
+        self.writer = None
+        self.keys = None
+        self.append_header = True
+        self.file_flags = 'b' if six.PY2 and os.name == 'nt' else ''
+        super(CSV_Logger, self).__init__()
+
+    def on_train_begin(self, logs=None):
+        if self.append:
+            if os.path.exists(self.filename):
+                with open(self.filename, 'r' + self.file_flags) as f:
+                    self.append_header = not bool(len(f.readline()))
+            self.csv_file = open(self.filename, 'a' + self.file_flags)
+        else:
+            self.csv_file = open(self.filename, 'w' + self.file_flags)
+
+    def on_epoch_begin(self, logs=None):
+        self.epoch_time_start = time.time()
+
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs or {}
+
+        def handle_value(k):
+            is_zero_dim_ndarray = isinstance(k, np.ndarray) and k.ndim == 0
+            if isinstance(k, six.string_types):
+                return k
+            elif isinstance(k, Iterable) and not is_zero_dim_ndarray:
+                return '"[%s]"' % (', '.join(map(str, k)))
+            else:
+                return k
+
+        if not self.writer:
+            self.keys = sorted(logs.keys())
+
+            class CustomDialect(csv.excel):
+                delimiter = self.sep
+
+            self.writer = csv.DictWriter(self.csv_file,
+                                         fieldnames=['epoch'] + self.keys, dialect=CustomDialect)
+            if self.append_header:
+                self.writer.writeheader()
+
+        row_dict = OrderedDict({'epoch': epoch})
+        row_dict.update(('epoch time', time.time() - self.epoch_time_start))
+        row_dict.update((key, handle_value(logs[key])) for key in self.keys)
+        self.writer.writerow(row_dict)
+        self.csv_file.flush()
+
+    def on_train_end(self, logs=None):
+        self.csv_file.close()
+        self.writer = None
 
 # Preprocess train and test set data
 (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
-x_train /= np.max(x_train)
-x_test /= np.max(x_test)
+
+for i in range(x_train.shape[3]):
+    mean = np.mean(x_train[:,:,:,i])
+    std_dev = np.std(x_train[:,:,:,i])
+    x_train[:,:,:,i] -= mean
+    x_train[:,:,:,i] /= std_dev
 
 y_train = np_utils.to_categorical(y_train, num_classes)
 y_test = np_utils.to_categorical(y_test, num_classes)
@@ -47,7 +115,8 @@ sgd = SGD(lr=0.1, momentum=0.9, decay=0.0, nesterov=False)
 model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
 
 lrate = LearningRateScheduler(step_decay)
-callbacks_list = [lrate]
+csv_logger = CSV_Logger('train_cifar10.log')
+callbacks_list = [lrate, csv_logger]
 
 if not data_augmentation:
     history = model.fit(x_train, y_train, 
@@ -77,13 +146,15 @@ else:
                                   verbose=1,
                                   validation_data=(x_test, y_test))
 
+model.save('cifar10-resnet.h5')
+
 # summarize history for accuracy
 plt.plot(history.history['acc'])    
 plt.plot(history.history['val_acc'])
 plt.title('model accuracy')
 plt.ylabel('accuracy')
 plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
+plt.legend(['train', 'val'], loc='upper left')
 plt.savefig('cifar10-resnet-acc.png')
 # summarize history for loss
 plt.plot(history.history['loss'])
@@ -91,7 +162,7 @@ plt.plot(history.history['val_loss'])
 plt.title('model loss')
 plt.ylabel('loss')
 plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
+plt.legend(['train', 'val'], loc='upper left')
 plt.savefig('cifar10-resnet-loss.png')
 
 scores = model.evaluate(x_test, y_test)
