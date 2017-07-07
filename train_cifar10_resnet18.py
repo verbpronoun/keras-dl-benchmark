@@ -7,6 +7,7 @@ import six
 import os
 import time
 import csv
+import h5py
 
 from collections import OrderedDict
 from collections import Iterable
@@ -27,7 +28,6 @@ num_classes = 10
 data_augmentation = True
 
 def step_decay(epoch):
-    epoch = epoch - 1 # arg is 1-based
     initial_lrate = 0.1
     drop = 0.1
     epoch_drop = 100
@@ -102,9 +102,6 @@ for i in range(x_train.shape[3]):
     std_dev = np.std(x_train[:,:,:,i])
     x_train[:,:,:,i] -= mean
     x_train[:,:,:,i] /= std_dev
-for i in range(x_test.shape[3]):
-    mean = np.mean(x_test[:,:,:,i])
-    std_dev = np.std(x_test[:,:,:,i])
     x_test[:,:,:,i] -= mean
     x_test[:,:,:,i] /= std_dev
 
