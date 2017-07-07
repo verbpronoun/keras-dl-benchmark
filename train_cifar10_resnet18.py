@@ -119,7 +119,7 @@ sgd = SGD(lr=0.1, momentum=0.9, decay=0.0, nesterov=False)
 model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
 
 lrate = LearningRateScheduler(step_decay)
-csv_logger = CSV_Logger('train_cifar10.log')
+csv_logger = CSV_Logger('train_cifar10_resnet18.log')
 callbacks_list = [lrate, csv_logger]
 
 if not data_augmentation:
@@ -150,7 +150,7 @@ else:
                                   verbose=1,
                                   validation_data=(x_test, y_test))
 
-model.save('cifar10-resnet.h5')
+model.save('cifar10-resnet18.h5')
 
 # summarize history for accuracy
 plt.plot(history.history['acc'])    
@@ -159,7 +159,7 @@ plt.title('model accuracy')
 plt.ylabel('accuracy')
 plt.xlabel('epoch')
 plt.legend(['train', 'val'], loc='upper left')
-plt.savefig('cifar10-resnet-acc.png')
+plt.savefig('cifar10-resnet18-acc.png')
 # summarize history for loss
 plt.plot(history.history['loss'])
 plt.plot(history.history['val_loss'])
@@ -167,7 +167,7 @@ plt.title('model loss')
 plt.ylabel('loss')
 plt.xlabel('epoch')
 plt.legend(['train', 'val'], loc='upper left')
-plt.savefig('cifar10-resnet-loss.png')
+plt.savefig('cifar10-resnet18-loss.png')
 
 scores = model.evaluate(x_test, y_test)
 print("\n%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
