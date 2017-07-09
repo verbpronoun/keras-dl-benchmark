@@ -133,5 +133,8 @@ def ResNet34(input_shape, num_classes):
 
 def ResNet50(input_shape, num_classes):
     return ResNet_builder(BottleneckBlock, [3, 4, 6, 3], input_shape, num_classes)
+
+def ResNet101(input_shape, num_classes):
+    return ResNet_builder(BottleneckBlock, [3, 4, 23, 3], input_shape, num_classes)
         
         

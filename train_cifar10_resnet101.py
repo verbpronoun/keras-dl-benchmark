@@ -1,3 +1,5 @@
+# test
+
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
@@ -110,13 +112,13 @@ y_test = np_utils.to_categorical(y_test, num_classes)
 
 img_input = Input(shape=x_train.shape[1:])
 
-model = resnet_builder.ResNet18(x_train.shape[1:], num_classes=num_classes)
+model = resnet_builder.ResNet101(x_train.shape[1:], num_classes=num_classes)
 
 sgd = SGD(lr=0.1, momentum=0.9, decay=0.0, nesterov=False)
 model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
 
 lrate = LearningRateScheduler(step_decay)
-csv_logger = CSV_Logger('train_cifar10_resnet18.log')
+csv_logger = CSV_Logger('train_cifar10_resnet101.log')
 callbacks_list = [lrate, csv_logger]
 
 if not data_augmentation:
@@ -136,8 +138,6 @@ else:
         rotation_range=0,
         width_shift_range=0.1,
         height_shift_range=0.1,
-        fill_mode='constant',
-        cval=0,
         horizontal_flip=True,
         vertical_flip=False)
     datagen.fit(x_train)
@@ -149,7 +149,7 @@ else:
                                   verbose=1,
                                   validation_data=(x_test, y_test))
 
-model.save('cifar10-resnet18.h5')
+model.save('cifar10-resnet101.h5')
 
 # summarize history for accuracy
 plt.plot(history.history['acc'])    
@@ -158,7 +158,7 @@ plt.title('model accuracy')
 plt.ylabel('accuracy')
 plt.xlabel('epoch')
 plt.legend(['train', 'val'], loc='upper left')
-plt.savefig('cifar10-resnet18-acc.png')
+plt.savefig('cifar10-resnet101-acc.png')
 # summarize history for loss
 plt.plot(history.history['loss'])
 plt.plot(history.history['val_loss'])
@@ -166,8 +166,9 @@ plt.title('model loss')
 plt.ylabel('loss')
 plt.xlabel('epoch')
 plt.legend(['train', 'val'], loc='upper left')
-plt.savefig('cifar10-resnet18-loss.png')
+plt.savefig('cifar10-resnet101-loss.png')
 
 scores = model.evaluate(x_test, y_test)
 print("\n%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
+        
         
