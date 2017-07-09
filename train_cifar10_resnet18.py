@@ -136,6 +136,8 @@ else:
         rotation_range=0,
         width_shift_range=0.1,
         height_shift_range=0.1,
+        fill_mode='constant',
+        cval=0,
         horizontal_flip=True,
         vertical_flip=False)
     datagen.fit(x_train)
