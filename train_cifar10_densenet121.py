@@ -112,8 +112,6 @@ for i in range(x_train.shape[3]):
 y_train = np_utils.to_categorical(y_train, num_classes)
 y_test = np_utils.to_categorical(y_test, num_classes)
 
-img_input = Input(shape=x_train.shape[1:])
-
 model = densenet_builder.DenseNet121(x_train.shape[1:], num_classes=num_classes, growth_rate=growth_rate, reduction=reduction)
 
 sgd = SGD(lr=0.1, momentum=0.9, decay=0.0, nesterov=False)
@@ -140,8 +138,8 @@ else:
         rotation_range=0,
         width_shift_range=0.1,
         height_shift_range=0.1,
-        fill_mode='constant',
-        cval=0,
+        # fill_mode='constant',
+        # cval=0,
         horizontal_flip=True,
         vertical_flip=False)
     datagen.fit(x_train)
