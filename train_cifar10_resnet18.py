@@ -1,4 +1,6 @@
 import numpy as np
+np.random.seed(123)  # for reproducibility
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
