@@ -116,7 +116,22 @@ model = densenet_builder.DenseNet121(x_train.shape[1:], num_classes=num_classes,
 
 # lrate = LearningRateScheduler(step_decay)
 csv_logger = CSV_Logger('train_cifar10_densenet121.log')
-callbacks_list = [lrate, csv_logger]
+callbacks_list = [csv_logger]
+
+datagen = ImageDataGenerator(
+            featurewise_center=False,
+            samplewise_center=False,
+            featurewise_std_normalization=False,
+            samplewise_std_normalization=False,
+            zca_whitening=False,
+            rotation_range=0,
+            width_shift_range=0.1,
+            height_shift_range=0.1,
+            fill_mode='constant',
+            cval=0,
+            horizontal_flip=True,
+            vertical_flip=False)
+datagen.fit(x_train)
 
 for num_epochs, lr_rate in [(150, 0.1), (100, 0.01), (100, 0.001)]:
     sgd = SGD(lr=lr_rate, momentum=0.9, decay=0.0, nesterov=False)
