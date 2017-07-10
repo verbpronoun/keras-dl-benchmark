@@ -12,14 +12,18 @@ if (K.image_data_format() == 'channels_first'):
 else:
     bn_axis = 3
 
+def conv3x3(input, numFilters, strides=1):
+    x = ZeroPadding2D(padding=1)(input)
+    x = Convolution2D(numFilters, (3, 3), strides=strides)(x)
+    return x
 
 def BasicBlock(input, numFilters, stride, isConvBlock):
     expansion = 1
-    x = Convolution2D(numFilters, (3, 3), strides=stride, padding='same')(input)
+    x = conv3x3(input, numFilters, strides=stride)
     x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.00001)(x)
     x = Activation('relu')(x)
 
-    x = Convolution2D(numFilters, (3, 3), padding='same')(x)
+    x = conv3x3(x, numFilters)
     x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.00001)(x)
 
     if isConvBlock:
@@ -44,11 +48,11 @@ def PreActBlock(input, numFilters, stride, isConvBlock):
     else:
         shortcut = x
     
-    x = Convolution2D(numFilters, (3, 3), strides=stride, padding='same')(x)
+    x = conv3x3(x, numFilters, strides=stride)
 
     x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.00001)(x)
     x = Activation('relu')(x)
-    x = Convolution2D(numFilters, (3, 3), padding = 'same')(x)
+    x = conv3x3(x, numFilters)
 
     x = layers.add([x, shortcut])
 
@@ -60,7 +64,7 @@ def BottleneckBlock(input, numFilters, stride, isConvBlock):
     x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.00001)(x)
     x = Activation('relu')(x)
 
-    x = Convolution2D(numFilters, (3, 3), padding='same')(x) 
+    x = conv3x3(x, numFilters) 
     x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.00001)(x)
     x = Activation('relu')(x)
 
@@ -93,7 +97,7 @@ def PreActBottleneck(input, numFilters, stride, isConvBlock):
 
     x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.00001)(x)
     x = Activation('relu')(x)
-    x = Convolution2D(numFilters, (3, 3), padding='same')(x) 
+    x = conv3x3(x, numFilters)
 
     x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.00001)(x)
     x = Activation('relu')(x)
@@ -110,7 +114,7 @@ def make_layer(block, input, numFilters, numBlocks, stride):
 
 def ResNet_builder(block, num_blocks, input_shape, num_classes):
     img_input = Input(shape=input_shape)
-    x = Convolution2D(64, (3, 3), padding='same')(img_input)
+    x = conv3x3(img_input, 64)
     x = BatchNormalization(axis = bn_axis, momentum=0.1, epsilon=0.00001)(x)
     x = Activation('relu')(x)
     
@@ -119,17 +123,17 @@ def ResNet_builder(block, num_blocks, input_shape, num_classes):
     x = make_layer(block, x, 256, num_blocks[2], 2)
     x = make_layer(block, x, 512, num_blocks[3], 2)
     
-    x = AveragePooling2D((4, 4), strides=2)(x)
+    x = AveragePooling2D((4, 4), strides=4)(x)
     x = Flatten()(x)
     out = Dense(num_classes, activation='softmax')(x)
     
     return Model(inputs=img_input, outputs=out)
     
 def ResNet18(input_shape, num_classes):
-    return ResNet_builder(PreActBlock, [2, 2, 2, 2],input_shape, num_classes)
+    return ResNet_builder(PreActBlock, [2, 2, 2, 2], input_shape, num_classes)
 
 def ResNet34(input_shape, num_classes):
-    return ResNet_builder(BasicBlock, [3, 4, 6 ,3],input_shape, num_classes)
+    return ResNet_builder(BasicBlock, [3, 4, 6 ,3], input_shape, num_classes)
 
 def ResNet50(input_shape, num_classes):
     return ResNet_builder(BottleneckBlock, [3, 4, 6, 3], input_shape, num_classes)
