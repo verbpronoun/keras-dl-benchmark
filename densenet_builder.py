@@ -51,6 +51,8 @@ def DenseNet_builder(num_blocks, input_shape, num_classes, growth_rate, reductio
 
     x = make_layer(x, num_blocks[3], growth_rate, num_transition_filters, True)
     x = BatchNormalization(axis=bn_axis)(x)
+    x = Activation('relu')(x)
+    x = AveragePooling2D((4, 4), strides=4)(x)
     x = Flatten()(x)
     out = Dense(num_classes, activation='softmax')(x)
 
