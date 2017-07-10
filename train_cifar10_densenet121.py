@@ -114,35 +114,14 @@ y_test = np_utils.to_categorical(y_test, num_classes)
 
 model = densenet_builder.DenseNet121(x_train.shape[1:], num_classes=num_classes, growth_rate=growth_rate, reduction=reduction)
 
-sgd = SGD(lr=0.1, momentum=0.9, decay=0.0, nesterov=False)
-model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
-
-lrate = LearningRateScheduler(step_decay)
+# lrate = LearningRateScheduler(step_decay)
 csv_logger = CSV_Logger('train_cifar10_densenet121.log')
 callbacks_list = [lrate, csv_logger]
 
-if not data_augmentation:
-    history = model.fit(x_train, y_train, 
-              batch_size=batch_size, 
-              epochs=num_epochs, 
-              callbacks=callbacks_list,
-              verbose=1,
-              validation_data=(x_test, y_test))
-else:
-    datagen = ImageDataGenerator(
-        featurewise_center=False,
-        samplewise_center=False,
-        featurewise_std_normalization=False,
-        samplewise_std_normalization=False,
-        zca_whitening=False,
-        rotation_range=0,
-        width_shift_range=0.1,
-        height_shift_range=0.1,
-        # fill_mode='constant',
-        # cval=0,
-        horizontal_flip=True,
-        vertical_flip=False)
-    datagen.fit(x_train)
+for num_epochs, lr_rate in [(150, 0.1), (100, 0.01), (100, 0.001)]:
+    sgd = SGD(lr=lr_rate, momentum=0.9, decay=0.0, nesterov=False)
+    model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
+
     history = model.fit_generator(datagen.flow(x_train, y_train, 
                                                batch_size=batch_size),
                                   steps_per_epoch=x_train.shape[0] // batch_size,
@@ -151,7 +130,7 @@ else:
                                   verbose=1,
                                   validation_data=(x_test, y_test))
 
-# model.save('cifar10-densenet121.h5')
+model.save('cifar10-densenet121.h5')
 
 # summarize history for accuracy
 plt.plot(history.history['acc'])    
