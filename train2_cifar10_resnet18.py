@@ -114,7 +114,7 @@ img_input = Input(shape=x_train.shape[1:])
 
 model = resnet_builder.ResNet18(x_train.shape[1:], num_classes=num_classes)
 
-csv_logger = CSV_Logger('train_cifar10_resnet18.log', append=True)
+csv_logger = CSV_Logger('train2_cifar10_resnet18.log', append=True)
 callbacks_list = [csv_logger]
 
 
@@ -154,7 +154,7 @@ for num_epochs, lr_rate in [(150, 0.1), (100, 0.01), (100, 0.001)]:
 
 
 
-model.save('cifar10-resnet18.h5')
+model.save('cifar10-resnet18-v2.h5')
 
 # summarize history for accuracy
 plt.plot(history.history['acc'])    
@@ -163,7 +163,7 @@ plt.title('model accuracy')
 plt.ylabel('accuracy')
 plt.xlabel('epoch')
 plt.legend(['train', 'val'], loc='upper left')
-plt.savefig('cifar10-resnet18-acc.png')
+plt.savefig('cifar10-resnet18-v2-acc.png')
 # summarize history for loss
 plt.plot(history.history['loss'])
 plt.plot(history.history['val_loss'])
@@ -171,7 +171,7 @@ plt.title('model loss')
 plt.ylabel('loss')
 plt.xlabel('epoch')
 plt.legend(['train', 'val'], loc='upper left')
-plt.savefig('cifar10-resnet18-loss.png')
+plt.savefig('cifar10-resnet18-v2-loss.png')
 
 scores = model.evaluate(x_test, y_test)
 print("\n%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
