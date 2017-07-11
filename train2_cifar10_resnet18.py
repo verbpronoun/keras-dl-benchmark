@@ -112,9 +112,9 @@ y_test = np_utils.to_categorical(y_test, num_classes)
 
 img_input = Input(shape=x_train.shape[1:])
 
-model = resnet_builder.ResNet18(x_train.shape[1:], num_classes=num_classes)
+model = resnet_builder.ResNet18_Basic(x_train.shape[1:], num_classes=num_classes)
 
-csv_logger = CSV_Logger('train2_cifar10_resnet18.log', append=True)
+csv_logger = CSV_Logger('train2.0_cifar10_resnet18.log', append=True)
 callbacks_list = [csv_logger]
 
 datagen = ImageDataGenerator(

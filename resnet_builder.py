@@ -128,6 +128,9 @@ def ResNet_builder(block, num_blocks, input_shape, num_classes):
     out = Dense(num_classes, activation='softmax')(x)
     
     return Model(inputs=img_input, outputs=out)
+
+def ResNet18_Basic(input_shape, num_classes):
+    return ResNet_builder(BasicBlock, [2, 2, 2, 2], input_shape, num_classes)
     
 def ResNet18(input_shape, num_classes):
     return ResNet_builder(PreActBlock, [2, 2, 2, 2], input_shape, num_classes)
