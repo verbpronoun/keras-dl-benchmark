@@ -118,7 +118,7 @@ model = resnet_builder.ResNet50(x_train.shape[1:], num_classes=num_classes)
 # model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
 
 # lrate = LearningRateScheduler(step_decay)
-csv_logger = CSV_Logger('train_cifar10.log')
+csv_logger = CSV_Logger('train_cifar10.log', append=True)
 callbacks_list = [csv_logger]
 
 datagen = ImageDataGenerator(
