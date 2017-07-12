@@ -100,12 +100,12 @@ x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
 
 for i in range(x_train.shape[3]):
-    mean = np.mean(x_train[:,:,:,i])
-    std_dev = np.std(x_train[:,:,:,i])
-    x_train[:,:,:,i] -= mean
-    x_train[:,:,:,i] /= std_dev
-    x_test[:,:,:,i] -= mean
-    x_test[:,:,:,i] /= std_dev
+    mean = np.mean(x_train[:,i,:,:])
+    std_dev = np.std(x_train[:,i,:,:])
+    x_train[:,i,:,:] -= mean
+    x_train[:,i,:,:] /= std_dev
+    x_test[:,i,:,:] -= mean
+    x_test[:,i,:,:] /= std_dev
 
 y_train = np_utils.to_categorical(y_train, num_classes)
 y_test = np_utils.to_categorical(y_test, num_classes)
@@ -118,7 +118,8 @@ model = resnet_builder.ResNet50(x_train.shape[1:], num_classes=num_classes)
 # model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
 
 # lrate = LearningRateScheduler(step_decay)
-csv_logger = CSV_Logger('train_cifar10.log', append=True)
+
+csv_logger = CSV_Logger('train_cifar10-resnet50-th.log', append=True)
 callbacks_list = [csv_logger]
 
 datagen = ImageDataGenerator(
@@ -176,7 +177,7 @@ for num_epochs, lr_rate in [(150, 0.1), (100, 0.01), (100, 0.001)]:
 #                                   verbose=1,
 #                                   validation_data=(x_test, y_test))
 
-model.save('cifar10-resnet.h5')
+model.save('cifar10-resnet50-th.h5')
 
 # summarize history for accuracy
 plt.plot(history.history['acc'])    
@@ -185,7 +186,10 @@ plt.title('model accuracy')
 plt.ylabel('accuracy')
 plt.xlabel('epoch')
 plt.legend(['train', 'val'], loc='upper left')
-plt.savefig('cifar10-resnet-acc.png')
+plt.savefig('cifar10-resnet50-th-acc.png')
+
+plt.clf()
+
 # summarize history for loss
 plt.plot(history.history['loss'])
 plt.plot(history.history['val_loss'])
@@ -193,7 +197,7 @@ plt.title('model loss')
 plt.ylabel('loss')
 plt.xlabel('epoch')
 plt.legend(['train', 'val'], loc='upper left')
-plt.savefig('cifar10-resnet-loss.png')
+plt.savefig('cifar10-resnet50-th-loss.png')
 
 scores = model.evaluate(x_test, y_test)
 print("\n%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
