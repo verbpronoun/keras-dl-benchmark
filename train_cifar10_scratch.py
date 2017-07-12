@@ -99,7 +99,7 @@ class CSV_Logger(Callback):
 x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
 
-for i in range(x_train.shape[3]):
+for i in range(x_train.shape[1]):
     mean = np.mean(x_train[:,i,:,:])
     std_dev = np.std(x_train[:,i,:,:])
     x_train[:,i,:,:] -= mean
