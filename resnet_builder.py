@@ -12,23 +12,23 @@ if (K.image_data_format() == 'channels_first'):
 else:
     bn_axis = 3
 
-def conv3x3(input, numFilters, strides=1):
-    x = ZeroPadding2D(padding=1)(input)
-    x = Convolution2D(numFilters, (3, 3), strides=strides)(x)
+def my_conv(input, num_filters, kernel_size_tuple, strides=1, padding='valid'):
+    x = Convolution2D(num_filters, kernel_size_tuple, strides=strides, padding=padding, 
+                      use_bias=True, kernel_initializer='he_normal')(input)
     return x
 
 def BasicBlock(input, numFilters, stride, isConvBlock):
     expansion = 1
-    x = conv3x3(input, numFilters, strides=stride)
-    x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.00001)(x)
+    x = my_conv(input, numFilters, (3, 3), strides=stride, padding='same')
+    x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.000011)(x)
     x = Activation('relu')(x)
 
-    x = conv3x3(x, numFilters)
-    x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.00001)(x)
+    x = my_conv(x, numFilters, (3, 3), padding='same')
+    x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.000011)(x)
 
     if isConvBlock:
-        shortcut = Convolution2D(expansion * numFilters, (1, 1), strides = stride)(input)
-        shortcut = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.00001)(x)
+        shortcut = my_conv(input, expansion * numFilters, (1, 1), strides = stride)
+        shortcut = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.000011)(x)
     else:
         shortcut = input
 
@@ -40,19 +40,19 @@ def BasicBlock(input, numFilters, stride, isConvBlock):
 
 def PreActBlock(input, numFilters, stride, isConvBlock):
     expansion = 1
-    x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.00001)(input)
+    x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.000011)(input)
     x = Activation('relu')(x)
 
     if isConvBlock:
-        shortcut = Convolution2D(expansion * numFilters, (1, 1), strides = stride)(x)
+        shortcut = my_conv(x, expansion * numFilters, (1, 1), strides = stride)
     else:
         shortcut = x
     
-    x = conv3x3(x, numFilters, strides=stride)
+    x = my_conv(x, numFilters, (3, 3), strides=stride, padding='same')
 
-    x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.00001)(x)
+    x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.000011)(x)
     x = Activation('relu')(x)
-    x = conv3x3(x, numFilters)
+    x = my_conv(x, numFilters, (3, 3), padding = 'same')
 
     x = layers.add([x, shortcut])
 
@@ -60,20 +60,20 @@ def PreActBlock(input, numFilters, stride, isConvBlock):
 
 def BottleneckBlock(input, numFilters, stride, isConvBlock):
     expansion = 4
-    x = Convolution2D(numFilters, (1, 1), strides=stride)(input)
-    x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.00001)(x)
+    x = my_conv(input, numFilters, (1, 1), strides=stride)
+    x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.000011)(x)
     x = Activation('relu')(x)
 
-    x = conv3x3(x, numFilters) 
-    x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.00001)(x)
+    x = my_conv(x, numFilters, (3, 3), padding='same')
+    x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.000011)(x)
     x = Activation('relu')(x)
 
-    x = Convolution2D(4 * numFilters, (1, 1))(x)
-    x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.00001)(x)
+    x = my_conv(x, 4 * numFilters, (1, 1))
+    x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.000011)(x)
 
     if isConvBlock:
-        shortcut = Convolution2D(expansion * numFilters, (1, 1), strides=stride)(input)
-        shortcut = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.00001)(shortcut)
+        shortcut = my_conv(input, expansion * numFilters, (1, 1), strides=stride)
+        shortcut = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.000011)(shortcut)
     else:
         shortcut = input
 
@@ -85,23 +85,23 @@ def BottleneckBlock(input, numFilters, stride, isConvBlock):
 
 def PreActBottleneck(input, numFilters, stride, isConvBlock):
     expansion = 4
-    x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.00001)(input)
+    x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.000011)(input)
     x = Activation('relu')(x)
 
     if isConvBlock:
-        shortcut = Convolution2D(expansion * numFilters, (1, 1), strides = stride)(x)
+        shortcut = my_conv(x, expansion * numFilters, (1, 1), strides = stride)
     else:
         shortcut = x
 
-    x = Convolution2D(numFilters, (1, 1))(x)
+    x = my_conv(x, numFilters, (1, 1))
 
-    x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.00001)(x)
+    x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.000011)(x)
     x = Activation('relu')(x)
-    x = conv3x3(x, numFilters)
+    x = my_conv(x, numFilters, (3, 3), padding='same')
 
-    x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.00001)(x)
+    x = BatchNormalization(axis=bn_axis, momentum=0.1, epsilon=0.000011)(x)
     x = Activation('relu')(x)
-    x = Convolution2D(4 * numFilters, (1, 1))(x)
+    x = my_conv(x, 4 * numFilters, (1, 1))
 
     # did not finish...
 
@@ -114,8 +114,8 @@ def make_layer(block, input, numFilters, numBlocks, stride):
 
 def ResNet_builder(block, num_blocks, input_shape, num_classes):
     img_input = Input(shape=input_shape)
-    x = conv3x3(img_input, 64)
-    x = BatchNormalization(axis = bn_axis, momentum=0.1, epsilon=0.00001)(x)
+    x = my_conv(img_input, 64, (3, 3), padding='same')
+    x = BatchNormalization(axis = bn_axis, momentum=0.1, epsilon=0.000011)(x)
     x = Activation('relu')(x)
     
     x = make_layer(block, x, 64, num_blocks[0], 1)
@@ -128,6 +128,9 @@ def ResNet_builder(block, num_blocks, input_shape, num_classes):
     out = Dense(num_classes, activation='softmax')(x)
     
     return Model(inputs=img_input, outputs=out)
+
+def ResNet18_Basic(input_shape, num_classes):
+    return ResNet_builder(BasicBlock, [2, 2, 2, 2], input_shape, num_classes)
     
 def ResNet18(input_shape, num_classes):
     return ResNet_builder(PreActBlock, [2, 2, 2, 2], input_shape, num_classes)

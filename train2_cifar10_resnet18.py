@@ -112,25 +112,12 @@ y_test = np_utils.to_categorical(y_test, num_classes)
 
 img_input = Input(shape=x_train.shape[1:])
 
-model = resnet_builder.ResNet18(x_train.shape[1:], num_classes=num_classes)
+model = resnet_builder.ResNet18_Basic(x_train.shape[1:], num_classes=num_classes)
 
-csv_logger = CSV_Logger('train2_cifar10_resnet18.log', append=True)
+csv_logger = CSV_Logger('train2.0_cifar10_resnet18.log', append=True)
 callbacks_list = [csv_logger]
 
-
-for num_epochs, lr_rate in [(150, 0.1), (100, 0.01), (100, 0.001)]:
-    sgd = SGD(lr=lr_rate, momentum=0.9, decay=0.0, nesterov=False)
-    model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
-
-    if not data_augmentation:
-        history = model.fit(x_train, y_train, 
-                  batch_size=batch_size, 
-                  epochs=num_epochs, 
-                  callbacks=callbacks_list,
-                  verbose=1,
-                  validation_data=(x_test, y_test))
-    else:
-        datagen = ImageDataGenerator(
+datagen = ImageDataGenerator(
             featurewise_center=False,
             samplewise_center=False,
             featurewise_std_normalization=False,
@@ -143,14 +130,19 @@ for num_epochs, lr_rate in [(150, 0.1), (100, 0.01), (100, 0.001)]:
             cval=0,
             horizontal_flip=True,
             vertical_flip=False)
-        datagen.fit(x_train)
-        history = model.fit_generator(datagen.flow(x_train, y_train, 
-                                                   batch_size=batch_size),
-                                      steps_per_epoch=x_train.shape[0] // batch_size,
-                                      epochs=num_epochs,
-                                      callbacks=callbacks_list,
-                                      verbose=1,
-                                      validation_data=(x_test, y_test))
+datagen.fit(x_train)
+
+for num_epochs, lr_rate in [(150, 0.1), (100, 0.01), (100, 0.001)]:
+    sgd = SGD(lr=lr_rate, momentum=0.9, decay=0.0, nesterov=False)
+    model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
+
+    history = model.fit_generator(datagen.flow(x_train, y_train, 
+                                               batch_size=batch_size),
+                                  steps_per_epoch=x_train.shape[0] // batch_size,
+                                  epochs=num_epochs,
+                                  callbacks=callbacks_list,
+                                  verbose=1,
+                                  validation_data=(x_test, y_test))
 
 
 
@@ -164,6 +156,9 @@ plt.ylabel('accuracy')
 plt.xlabel('epoch')
 plt.legend(['train', 'val'], loc='upper left')
 plt.savefig('cifar10-resnet18-v2-acc.png')
+
+plt.clf()
+
 # summarize history for loss
 plt.plot(history.history['loss'])
 plt.plot(history.history['val_loss'])
