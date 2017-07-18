@@ -3,6 +3,12 @@ from keras.layers import Input, merge
 from keras.layers import Dense, Activation, Flatten, BatchNormalization
 from keras.layers import Conv2D, MaxPooling2D, ZeroPadding2D, AveragePooling2D
 from keras.regularizers import l2
+from keras import backend as K
+
+if (K.image_data_format() == 'channels_first'):
+        bn_axis = 1
+else:
+        bn_axis = 3
 
 def rnpa_bottleneck_layer(input_tensor, nb_filters, filter_sz, stage,
     init='glorot_normal', reg=0.0, use_shortcuts=True):
@@ -12,11 +18,11 @@ def rnpa_bottleneck_layer(input_tensor, nb_filters, filter_sz, stage,
     bn_name = 'bn' + str(stage)
     conv_name = 'conv' + str(stage)
     relu_name = 'relu' + str(stage)
-    merge_name = '+' + str(stage)
+    merge_name = 'and' + str(stage)
 
     # batchnorm-relu-conv, from nb_in_filters to nb_bottleneck_filters via 1x1 conv
     if stage>1: # first activation is just after conv1
-        x = BatchNormalization(axis=1, name=bn_name+'a')(input_tensor)
+        x = BatchNormalization(axis=bn_axis, name=bn_name+'a')(input_tensor)
         x = Activation('relu', name=relu_name+'a')(x)
     else:
         x = input_tensor
@@ -30,7 +36,7 @@ def rnpa_bottleneck_layer(input_tensor, nb_filters, filter_sz, stage,
         )(x)
 
     # batchnorm-relu-conv, from nb_bottleneck_filters to nb_bottleneck_filters via FxF conv
-    x = BatchNormalization(axis=1, name=bn_name+'b')(x)
+    x = BatchNormalization(axis=bn_axis, name=bn_name+'b')(x)
     x = Activation('relu', name=relu_name+'b')(x)
     x = Conv2D(
             nb_bottleneck_filters, (filter_sz, filter_sz),
@@ -42,7 +48,7 @@ def rnpa_bottleneck_layer(input_tensor, nb_filters, filter_sz, stage,
         )(x)
 
     # batchnorm-relu-conv, from nb_in_filters to nb_bottleneck_filters via 1x1 conv
-    x = BatchNormalization(axis=1, name=bn_name+'c')(x)
+    x = BatchNormalization(axis=bn_axis, name=bn_name+'c')(x)
     x = Activation('relu', name=relu_name+'c')(x)
     x = Conv2D(nb_in_filters, (1, 1),
             kernel_initializer=init, kernel_regularizer=l2(reg),
@@ -119,7 +125,7 @@ def ResNetPreAct(input_shape=(3,32,32), nb_classes=10,
             use_bias=False,
             name='conv0'
         )(img_input)
-    x = BatchNormalization(axis=1, name='bn0')(x)
+    x = BatchNormalization(axis=bn_axis, name='bn0')(x)
     x = Activation('relu', name='relu0')(x)
 
     for stage in range(1,nb_res_stages+1):
@@ -134,7 +140,7 @@ def ResNetPreAct(input_shape=(3,32,32), nb_classes=10,
             )
 
 
-    x = BatchNormalization(axis=1, name='bnF')(x)
+    x = BatchNormalization(axis=bn_axis, name='bnF')(x)
     x = Activation('relu', name='reluF')(x)
 
     if use_final_conv:
