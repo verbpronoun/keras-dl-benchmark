@@ -10,6 +10,7 @@ from keras.datasets import cifar10
 from keras.preprocessing.image import ImageDataGenerator
 from keras.utils import np_utils
 from keras.callbacks import ReduceLROnPlateau, CSVLogger, EarlyStopping
+from keras import backend as K
 
 import numpy as np
 import resnetpa
@@ -46,7 +47,11 @@ X_test -= mean_image
 X_train /= 128.
 X_test /= 128.
 
-model = resnetpa.ResNetPreAct((img_channels, img_rows, img_cols), nb_classes)
+if (K.image_data_format() == 'channels_first'):
+    model = resnetpa.ResNetPreAct((img_channels, img_rows, img_cols), nb_classes)
+else:
+    model = resnetpa.ResNetPreAct((img_rows, img_cols, img_channels), nb_classes)
+
 model.compile(loss='categorical_crossentropy',
               optimizer='adam',
               metrics=['accuracy'])
