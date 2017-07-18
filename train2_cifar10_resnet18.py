@@ -13,7 +13,6 @@ import h5py
 
 from collections import OrderedDict
 from collections import Iterable
-
 from keras.layers import Input
 from keras.models import Model
 from keras.optimizers import SGD
@@ -22,6 +21,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import LearningRateScheduler
 from keras.callbacks import Callback
 from keras.datasets import cifar10
+from keras import backend as K
 import resnet_builder
 
 batch_size = 128
@@ -99,13 +99,22 @@ class CSV_Logger(Callback):
 x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
 
-for i in range(x_train.shape[3]):
-    mean = np.mean(x_train[:,:,:,i])
-    std_dev = np.std(x_train[:,:,:,i])
-    x_train[:,:,:,i] -= mean
-    x_train[:,:,:,i] /= std_dev
-    x_test[:,:,:,i] -= mean
-    x_test[:,:,:,i] /= std_dev
+if (K.image_data_format() == 'channels_first'):
+    for i in range(x_train.shape[1]):
+        mean = np.mean(x_train[:,i,:,:])
+        std_dev = np.std(x_train[:,i,:,:])
+        x_train[:,i,:,:] -= mean
+        x_train[:,i,:,:] /= std_dev
+        x_test[:,i,:,:] -= mean
+        x_test[:,i,:,:] /= std_dev
+else:
+    for i in range(x_train.shape[3]):
+        mean = np.mean(x_train[:,:,:,i])
+        std_dev = np.std(x_train[:,:,:,i])
+        x_train[:,:,:,i] -= mean
+        x_train[:,:,:,i] /= std_dev
+        x_test[:,:,:,i] -= mean
+        x_test[:,:,:,i] /= std_dev
 
 y_train = np_utils.to_categorical(y_train, num_classes)
 y_test = np_utils.to_categorical(y_test, num_classes)
@@ -114,7 +123,11 @@ img_input = Input(shape=x_train.shape[1:])
 
 model = resnet_builder.ResNet18_Basic(x_train.shape[1:], num_classes=num_classes)
 
-csv_logger = CSV_Logger('train2.0_cifar10_resnet18.log', append=True)
+if (K.image_data_format() == 'channels_first'):
+    csv_logger = CSV_Logger('train_cifar10_resnet18_basic_th.log', append=True)
+else:
+    csv_logger = CSV_Logger('train_cifar10_resnet18_basic_tf.log', append=True)
+    
 callbacks_list = [csv_logger]
 
 datagen = ImageDataGenerator(
