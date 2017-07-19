@@ -22,7 +22,7 @@ def BottleneckBlock(input, growth_rate):
     # each 1x1 convolution reduces input to 4k feature-maps
     x = conv_layer(input, 4 * growth_rate, 1)
     x = conv_layer(x, growth_rate, 3)
-    x = concatenate([input, x])
+    x = concatenate([input, x], axis=bn_axis)
     return x
 
 def TransitionBlock(input, num_filters):
