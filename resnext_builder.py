@@ -27,22 +27,22 @@ def Block(input, numFilters, stride, isConvBlock, cardinality, bottleneck_width)
     for i in range(cardinality):
         # make grouped convolution
         x = my_conv(input, width, (1, 1), strides=stride)
-        x = BatchNormalization(axis=channel_axis, momentum=0.1, epsilon=0.00001)(x)
+        x = BatchNormalization(axis=channel_axis, momentum=0.1, epsilon=0.000011)(x)
         x = Activation('relu')(x)
 
         x = my_conv(x, width, (3, 3), padding='same')
-        x = BatchNormalization(axis=channel_axis, momentum=0.1, epsilon=0.00001)(x)
+        x = BatchNormalization(axis=channel_axis, momentum=0.1, epsilon=0.000011)(x)
         x = Activation('relu')(x)
 
         group.append(x)
 
     x = concatenate(group, axis=channel_axis)
     x = my_conv(x, expansion * numFilters, (1, 1))
-    x = BatchNormalization(axis=channel_axis, momentum=0.1, epsilon=0.00001)(x)
+    x = BatchNormalization(axis=channel_axis, momentum=0.1, epsilon=0.000011)(x)
 
     if isConvBlock:
         shortcut = my_conv(input, expansion * numFilters, (1, 1), strides=stride)
-        shortcut = BatchNormalization(axis=channel_axis, momentum=0.1, epsilon=0.00001)(shortcut)
+        shortcut = BatchNormalization(axis=channel_axis, momentum=0.1, epsilon=0.000011)(shortcut)
     else:
         shortcut = input
 
@@ -61,7 +61,7 @@ def make_layer(block, input, numFilters, numBlocks, stride, cardinality, bottlen
 def ResNext_builder(block, num_blocks, input_shape, num_classes, cardinality, bottleneck_width):
     img_input = Input(shape=input_shape)
     x = my_conv(img_input, 64, (1, 1))
-    x = BatchNormalization(axis = channel_axis, momentum=0.1, epsilon=0.00001)(x)
+    x = BatchNormalization(axis = channel_axis, momentum=0.1, epsilon=0.000011)(x)
     x = Activation('relu')(x)
     
     x = make_layer(Block, x, 64, num_blocks[0], 1, cardinality, bottleneck_width)

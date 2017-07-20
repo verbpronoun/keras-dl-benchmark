@@ -13,7 +13,6 @@ import h5py
 
 from collections import OrderedDict
 from collections import Iterable
-
 from keras.layers import Input
 from keras.models import Model
 from keras.optimizers import SGD
@@ -22,11 +21,15 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import LearningRateScheduler
 from keras.callbacks import Callback
 from keras.datasets import cifar10
-import resnet_builder
+from keras import backend as K
+import densenet_builder
 
 batch_size = 128
 num_epochs = 350
 num_classes = 10
+data_augmentation = True
+growth_rate = 32
+reduction = 0.5
 data_augmentation = True
 
 def step_decay(epoch):
@@ -99,22 +102,35 @@ class CSV_Logger(Callback):
 x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
 
-for i in range(x_train.shape[3]):
-    mean = np.mean(x_train[:,:,:,i])
-    std_dev = np.std(x_train[:,:,:,i])
-    x_train[:,:,:,i] -= mean
-    x_train[:,:,:,i] /= std_dev
-    x_test[:,:,:,i] -= mean
-    x_test[:,:,:,i] /= std_dev
+if (K.image_data_format() == 'channels_first'):
+    for i in range(x_train.shape[1]):
+        mean = np.mean(x_train[:,i,:,:])
+        std_dev = np.std(x_train[:,i,:,:])
+        x_train[:,i,:,:] -= mean
+        x_train[:,i,:,:] /= std_dev
+        x_test[:,i,:,:] -= mean
+        x_test[:,i,:,:] /= std_dev
+else:
+    for i in range(x_train.shape[3]):
+        mean = np.mean(x_train[:,:,:,i])
+        std_dev = np.std(x_train[:,:,:,i])
+        x_train[:,:,:,i] -= mean
+        x_train[:,:,:,i] /= std_dev
+        x_test[:,:,:,i] -= mean
+        x_test[:,:,:,i] /= std_dev
 
 y_train = np_utils.to_categorical(y_train, num_classes)
 y_test = np_utils.to_categorical(y_test, num_classes)
 
 img_input = Input(shape=x_train.shape[1:])
 
-model = resnet_builder.ResNet18_Basic(x_train.shape[1:], num_classes=num_classes)
+model = densenet_builder.DenseNet121(x_train.shape[1:], num_classes=num_classes, growth_rate=growth_rate, reduction=reduction)
 
-csv_logger = CSV_Logger('train2.0_cifar10_resnet18.log', append=True)
+if (K.image_data_format() == 'channels_first'):
+    csv_logger = CSV_Logger('train_cifar10_densenet121_th.log', append=True)
+else:
+    csv_logger = CSV_Logger('train_cifar10_densenet121_tf.log', append=True)
+    
 callbacks_list = [csv_logger]
 
 datagen = ImageDataGenerator(
@@ -145,28 +161,10 @@ for num_epochs, lr_rate in [(150, 0.1), (100, 0.01), (100, 0.001)]:
                                   validation_data=(x_test, y_test))
 
 
-
-model.save('cifar10-resnet18-v2.h5')
-
-# summarize history for accuracy
-plt.plot(history.history['acc'])    
-plt.plot(history.history['val_acc'])
-plt.title('model accuracy')
-plt.ylabel('accuracy')
-plt.xlabel('epoch')
-plt.legend(['train', 'val'], loc='upper left')
-plt.savefig('cifar10-resnet18-v2-acc.png')
-
-plt.clf()
-
-# summarize history for loss
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'val'], loc='upper left')
-plt.savefig('cifar10-resnet18-v2-loss.png')
+if (K.image_data_format() == 'channels_first'):
+    model.save('cifar10-densenet121-th.h5')
+else:
+    model.save('cifar10-densenet121-tf.h5')
 
 scores = model.evaluate(x_test, y_test)
 print("\n%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
